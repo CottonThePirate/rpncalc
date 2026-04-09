@@ -16,7 +16,7 @@
     --display-bg: #0a1a0a;
     --display-glow: #33ff66;
     --display-dim: #1a7733;
-    --btn-num: #3a3a45;
+    --btn-num: #3a3a44;
     --btn-num-hover: #4a4a55;
     --btn-op: #4a3a2a;
     --btn-op-hover: #5a4a3a;
@@ -272,17 +272,17 @@
 <div class="calculator" id="calc">
   <div class="brand">
     <span class="brand-name">Retro Future</span>
-    <span class="brand-model">RPN-26</span>
+    <span class="brand-model">RPL-48</span>
   </div>
 
   <div class="display-bezel">
     <div class="display" id="display">
-      <div class="stack-row"><span class="stack-label">T:</span><span class="stack-value" id="reg-t">0</span></div>
-      <div class="stack-row"><span class="stack-label">Z:</span><span class="stack-value" id="reg-z">0</span></div>
-      <div class="stack-row"><span class="stack-label">Y:</span><span class="stack-value" id="reg-y">0</span></div>
-      <div class="stack-row"><span class="stack-label">X:</span><span class="stack-value" id="reg-x">0</span></div>
+      <div class="stack-row"><span class="stack-label">4:</span><span class="stack-value" id="reg-4"></span></div>
+      <div class="stack-row"><span class="stack-label">3:</span><span class="stack-value" id="reg-3"></span></div>
+      <div class="stack-row"><span class="stack-label">2:</span><span class="stack-value" id="reg-2"></span></div>
+      <div class="stack-row"><span class="stack-label">1:</span><span class="stack-value" id="reg-1"></span></div>
       <div class="input-row">
-        <span class="input-label">IN</span>
+        <span class="input-label">&gt;</span>
         <span class="input-value" id="input-buf"><span class="cursor">_</span></span>
       </div>
       <div class="error-msg" id="error-msg"></div>
@@ -291,7 +291,7 @@
 
   <div class="button-grid">
     <!-- Row 1: functions -->
-    <button class="btn btn-func" data-action="swap">x↔y</button>
+    <button class="btn btn-func" data-action="swap">SWAP<span class="key-hint">s</span></button>
     <button class="btn btn-func" data-action="roll">R↓<span class="key-hint">r</span></button>
     <button class="btn btn-func" data-action="sqrt">√x</button>
     <button class="btn btn-func" data-action="pow">yˣ<span class="key-hint">^</span></button>
@@ -336,31 +336,31 @@
 
 <script>
 (function() {
-  // 4-level stack: T Z Y X  (classic HP style)
-  const stack = [0, 0, 0, 0]; // [T, Z, Y, X]
+  // HP-48 / RPL stack: unbounded, stack[0] = level 1 (bottom, most recent)
+  let stack = [];
   let inputBuf = '';
-  let liftEnabled = true; // after enter/op, next digit pushes stack
 
-  const elT = document.getElementById('reg-t');
-  const elZ = document.getElementById('reg-z');
-  const elY = document.getElementById('reg-y');
-  const elX = document.getElementById('reg-x');
+  const elL1 = document.getElementById('reg-1');
+  const elL2 = document.getElementById('reg-2');
+  const elL3 = document.getElementById('reg-3');
+  const elL4 = document.getElementById('reg-4');
   const elIn = document.getElementById('input-buf');
   const elErr = document.getElementById('error-msg');
 
   function fmt(n) {
+    if (n === undefined) return '';
     if (!isFinite(n)) return n > 0 ? '∞' : n < 0 ? '-∞' : 'NaN';
-    if (Math.abs(n) > 1e12 || (Math.abs(n) < 1e-6 && n !== 0)) return n.toExponential(6);
-    // Remove trailing zeros for clean display
-    const s = parseFloat(n.toPrecision(12)).toString();
-    return s;
+    if (n === 0) return '0';
+    if (Math.abs(n) > 1e12 || Math.abs(n) < 1e-6) return n.toExponential(6);
+    return parseFloat(n.toPrecision(12)).toString();
   }
 
   function render() {
-    elT.textContent = fmt(stack[0]);
-    elZ.textContent = fmt(stack[1]);
-    elY.textContent = fmt(stack[2]);
-    elX.textContent = fmt(stack[3]);
+    // Show top 4 visible levels; level 1 is the most recent push (stack end).
+    elL1.textContent = fmt(stack[stack.length - 1]);
+    elL2.textContent = fmt(stack[stack.length - 2]);
+    elL3.textContent = fmt(stack[stack.length - 3]);
+    elL4.textContent = fmt(stack[stack.length - 4]);
     if (inputBuf === '') {
       elIn.innerHTML = '<span class="cursor">_</span>';
     } else {
@@ -374,41 +374,13 @@
     setTimeout(() => elErr.classList.remove('show'), 1500);
   }
 
-  function pushStack(val) {
-    // T is lost, everything shifts up
-    stack[0] = stack[1];
-    stack[1] = stack[2];
-    stack[2] = stack[3];
-    stack[3] = val;
-  }
-
-  function commitInput() {
-    // If there's something in the buffer, push it to X (with stack lift if needed)
-    if (inputBuf !== '') {
-      const val = parseFloat(inputBuf);
-      if (isNaN(val)) { showError('Bad number'); return false; }
-      if (liftEnabled) {
-        pushStack(val);
-      } else {
-        stack[3] = val;
-      }
-      inputBuf = '';
-      liftEnabled = true;
-      return true;
-    }
-    return true;
-  }
+  // ---- Input buffer (command line) ----
 
   function enterDigit(ch) {
     // Prevent multiple dots
     if (ch === '.' && inputBuf.includes('.')) return;
-    // Prevent leading zeros (allow "0.")
-    if (ch === '0' && inputBuf === '0') return;
-    if (ch !== '.' && ch !== '0' && inputBuf === '0') inputBuf = '';
-
-    if (inputBuf === '' && liftEnabled) {
-      // About to start typing a new number — lift stack
-    }
+    // Replace single leading zero when typing a non-dot digit
+    if (inputBuf === '0' && ch !== '.') inputBuf = '';
     inputBuf += ch;
     render();
   }
@@ -417,40 +389,73 @@
     if (inputBuf.length > 0) {
       inputBuf = inputBuf.slice(0, -1);
       render();
+    } else if (stack.length > 0) {
+      // HP-48: backspace with empty command line drops level 1
+      stack.pop();
+      render();
     }
   }
+
+  // commitInput pushes the buffer onto the stack as a new level.
+  // Returns true if a value was committed (or buffer was empty - no-op success).
+  function commitInput() {
+    if (inputBuf === '') return true;
+    const val = parseFloat(inputBuf);
+    if (isNaN(val)) { showError('Bad number'); inputBuf = ''; render(); return false; }
+    stack.push(val);
+    inputBuf = '';
+    return true;
+  }
+
+  // ---- Operations ----
 
   function doEnter() {
     if (inputBuf !== '') {
+      // Terminate the command line and push onto the stack
       commitInput();
-    } else {
-      // Duplicate X
-      pushStack(stack[3]);
+    } else if (stack.length > 0) {
+      // Empty command line: DUP level 1
+      stack.push(stack[stack.length - 1]);
     }
-    liftEnabled = false; // next digit replaces X
     render();
   }
 
-  function binaryOp(fn) {
-    commitInput();
-    const x = stack[3];
-    const y = stack[2];
+  function needArgs(n) {
+    // After committing input, do we have enough on the stack?
+    const available = stack.length + (inputBuf !== '' ? 1 : 0);
+    if (available < n) {
+      showError('Too few args');
+      return false;
+    }
+    return true;
+  }
+
+  function binaryOp(fn, name) {
+    if (!needArgs(2)) return;
+    if (!commitInput()) return;
+    const x = stack.pop(); // level 1 (right operand)
+    const y = stack.pop(); // level 2 (left operand)
     const result = fn(y, x);
-    // Drop: pull stack down
-    stack[3] = result;
-    stack[2] = stack[1];
-    stack[1] = stack[0];
-    stack[0] = stack[0]; // T replicates
-    liftEnabled = true;
+    if (result === null) {
+      // Op rejected — restore operands
+      stack.push(y);
+      stack.push(x);
+      return;
+    }
+    stack.push(result);
     render();
   }
 
   function unaryOp(fn) {
-    commitInput();
-    const result = fn(stack[3]);
-    if (result === undefined) return;
-    stack[3] = result;
-    liftEnabled = true;
+    if (!needArgs(1)) return;
+    if (!commitInput()) return;
+    const x = stack.pop();
+    const result = fn(x);
+    if (result === null) {
+      stack.push(x);
+      return;
+    }
+    stack.push(result);
     render();
   }
 
@@ -459,66 +464,81 @@
       case 'add': binaryOp((y,x) => y + x); break;
       case 'sub': binaryOp((y,x) => y - x); break;
       case 'mul': binaryOp((y,x) => y * x); break;
-      case 'div':
-        if (stack[3] === 0 && inputBuf === '') { showError('÷ by zero'); return; }
-        binaryOp((y,x) => { if(x===0){showError('÷ by zero'); return y;} return y/x; });
+      case 'div': {
+        // Check divisor before mutating state
+        const divisor = inputBuf !== '' ? parseFloat(inputBuf) : stack[stack.length - 1];
+        if (divisor === 0) { showError('÷ by zero'); return; }
+        binaryOp((y,x) => y / x);
         break;
+      }
       case 'pow': binaryOp((y,x) => Math.pow(y,x)); break;
-      case 'sqrt':
-        commitInput();
-        if (stack[3] < 0) { showError('√ of negative'); return; }
+      case 'sqrt': {
+        const operand = inputBuf !== '' ? parseFloat(inputBuf) : stack[stack.length - 1];
+        if (operand < 0) { showError('√ of negative'); return; }
         unaryOp(x => Math.sqrt(x));
         break;
+      }
       case 'neg':
         if (inputBuf !== '') {
           if (inputBuf.startsWith('-')) inputBuf = inputBuf.slice(1);
           else inputBuf = '-' + inputBuf;
           render();
-        } else {
-          stack[3] = -stack[3];
+        } else if (stack.length > 0) {
+          stack[stack.length - 1] = -stack[stack.length - 1];
           render();
         }
         break;
-      case 'swap':
-        commitInput();
-        const tmp = stack[3];
-        stack[3] = stack[2];
-        stack[2] = tmp;
+      case 'swap': {
+        if (!needArgs(2)) return;
+        if (!commitInput()) return;
+        const a = stack.pop();
+        const b = stack.pop();
+        stack.push(a);
+        stack.push(b);
         render();
         break;
-      case 'roll':
+      }
+      case 'roll': {
+        // ROLLDOWN (R↓): top goes to the bottom of visible stack;
+        // i.e. level 1 -> deepest, others move up. We'll do classic R↓:
+        // pop level 1, unshift it to position 0 (deepest).
         commitInput();
-        const x = stack[3];
-        stack[3] = stack[2];
-        stack[2] = stack[1];
-        stack[1] = stack[0];
-        stack[0] = x;
+        if (stack.length < 2) { render(); return; }
+        const top = stack.pop();
+        stack.unshift(top);
         render();
         break;
+      }
       case 'drop':
-        inputBuf = '';
-        stack[3] = stack[2];
-        stack[2] = stack[1];
-        stack[1] = stack[0];
-        // T replicates
+        // DROP: discards the command line if present, else pops level 1
+        if (inputBuf !== '') {
+          inputBuf = '';
+        } else if (stack.length > 0) {
+          stack.pop();
+        }
         render();
         break;
       case 'dup':
-        commitInput();
-        pushStack(stack[3]);
+        if (inputBuf !== '') {
+          // Commit then dup
+          if (!commitInput()) return;
+        }
+        if (stack.length > 0) {
+          stack.push(stack[stack.length - 1]);
+        }
         render();
         break;
       case 'clr':
         inputBuf = '';
-        stack[0] = stack[1] = stack[2] = stack[3] = 0;
-        liftEnabled = true;
+        stack = [];
         render();
         break;
       case 'enter': doEnter(); break;
     }
   }
 
-  // Button clicks
+  // ---- Event wiring ----
+
   document.querySelector('.button-grid').addEventListener('click', (e) => {
     const btn = e.target.closest('.btn');
     if (!btn) return;
@@ -526,11 +546,8 @@
     else if (btn.dataset.action) doAction(btn.dataset.action);
   });
 
-  // Keyboard
   document.addEventListener('keydown', (e) => {
-    // Prevent default for keys we handle
     const key = e.key;
-
     if (key >= '0' && key <= '9') { e.preventDefault(); enterDigit(key); }
     else if (key === '.') { e.preventDefault(); enterDigit('.'); }
     else if (key === 'Enter') { e.preventDefault(); doEnter(); }

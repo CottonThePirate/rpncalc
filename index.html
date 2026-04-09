@@ -24,6 +24,8 @@
     --btn-enter-hover: #3a5a4a;
     --btn-func: #2a2a3a;
     --btn-func-hover: #3a3a4a;
+    --btn-sci: #2a3340;
+    --btn-sci-hover: #354150;
     --btn-clear: #5a2a2a;
     --btn-clear-hover: #6a3a3a;
     --btn-text: #e0e0e0;
@@ -189,6 +191,18 @@
   }
   .error-msg.show { opacity: 1; }
 
+  .mode-indicator {
+    position: absolute;
+    top: 6px;
+    left: 12px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    color: var(--accent);
+    letter-spacing: 1px;
+    text-shadow: 0 0 4px rgba(255,136,68,0.4);
+    z-index: 3;
+  }
+
   /* === BUTTONS === */
   .button-grid {
     display: grid;
@@ -236,6 +250,14 @@
   .btn-func { background: var(--btn-func); font-size: 12px; }
   .btn-func:hover { background: var(--btn-func-hover); }
 
+  .btn-sci {
+    background: var(--btn-sci);
+    font-size: 11px;
+    color: #b8d4e8;
+    letter-spacing: 0.5px;
+  }
+  .btn-sci:hover { background: var(--btn-sci-hover); }
+
   .btn-clear { background: var(--btn-clear); }
   .btn-clear:hover { background: var(--btn-clear-hover); }
 
@@ -277,6 +299,7 @@
 
   <div class="display-bezel">
     <div class="display" id="display">
+      <div class="mode-indicator" id="mode-ind">DEG</div>
       <div class="stack-row"><span class="stack-label">4:</span><span class="stack-value" id="reg-4"></span></div>
       <div class="stack-row"><span class="stack-label">3:</span><span class="stack-value" id="reg-3"></span></div>
       <div class="stack-row"><span class="stack-label">2:</span><span class="stack-value" id="reg-2"></span></div>
@@ -290,35 +313,56 @@
   </div>
 
   <div class="button-grid">
-    <!-- Row 1: functions -->
+    <!-- Row 1: trig and log -->
+    <button class="btn btn-sci" data-action="sin">SIN</button>
+    <button class="btn btn-sci" data-action="cos">COS</button>
+    <button class="btn btn-sci" data-action="tan">TAN</button>
+    <button class="btn btn-sci" data-action="ln">LN</button>
+    <button class="btn btn-sci" data-action="exp">eˣ</button>
+
+    <!-- Row 2: inverse trig and log -->
+    <button class="btn btn-sci" data-action="asin">SIN⁻¹</button>
+    <button class="btn btn-sci" data-action="acos">COS⁻¹</button>
+    <button class="btn btn-sci" data-action="atan">TAN⁻¹</button>
+    <button class="btn btn-sci" data-action="log">LOG</button>
+    <button class="btn btn-sci" data-action="alog">10ˣ</button>
+
+    <!-- Row 3: constants and unary -->
+    <button class="btn btn-sci" data-action="pi">π</button>
+    <button class="btn btn-sci" data-action="e">e</button>
+    <button class="btn btn-sci" data-action="inv">1/x</button>
+    <button class="btn btn-sci" data-action="sqr">x²</button>
+    <button class="btn btn-sci" data-action="mode" id="mode-btn">DEG</button>
+
+    <!-- Row 4: stack ops -->
     <button class="btn btn-func" data-action="swap">SWAP<span class="key-hint">s</span></button>
     <button class="btn btn-func" data-action="roll">R↓<span class="key-hint">r</span></button>
-    <button class="btn btn-func" data-action="sqrt">√x</button>
+    <button class="btn btn-func" data-action="sqrt">√x<span class="key-hint">q</span></button>
     <button class="btn btn-func" data-action="pow">yˣ<span class="key-hint">^</span></button>
     <button class="btn btn-func" data-action="neg">±<span class="key-hint">n</span></button>
 
-    <!-- Row 2 -->
+    <!-- Row 5 -->
     <button class="btn btn-num" data-digit="7">7</button>
     <button class="btn btn-num" data-digit="8">8</button>
     <button class="btn btn-num" data-digit="9">9</button>
     <button class="btn btn-op" data-action="div">÷<span class="key-hint">/</span></button>
     <button class="btn btn-clear" data-action="clr">CLR<span class="key-hint">c</span></button>
 
-    <!-- Row 3 -->
+    <!-- Row 6 -->
     <button class="btn btn-num" data-digit="4">4</button>
     <button class="btn btn-num" data-digit="5">5</button>
     <button class="btn btn-num" data-digit="6">6</button>
     <button class="btn btn-op" data-action="mul">×<span class="key-hint">*</span></button>
     <button class="btn btn-func" data-action="drop">DROP<span class="key-hint">d</span></button>
 
-    <!-- Row 4 -->
+    <!-- Row 7 -->
     <button class="btn btn-num" data-digit="1">1</button>
     <button class="btn btn-num" data-digit="2">2</button>
     <button class="btn btn-num" data-digit="3">3</button>
     <button class="btn btn-op" data-action="sub">−<span class="key-hint">-</span></button>
     <button class="btn btn-func" data-action="dup">DUP</button>
 
-    <!-- Row 5 -->
+    <!-- Row 8 -->
     <button class="btn btn-num" data-digit="0">0</button>
     <button class="btn btn-num" data-digit=".">.</button>
     <button class="btn btn-enter" data-action="enter">ENTER ↵</button>
@@ -339,6 +383,7 @@
   // HP-48 / RPL stack: unbounded, stack[0] = level 1 (bottom, most recent)
   let stack = [];
   let inputBuf = '';
+  let angleMode = 'DEG'; // 'DEG' or 'RAD'
 
   const elL1 = document.getElementById('reg-1');
   const elL2 = document.getElementById('reg-2');
@@ -346,6 +391,13 @@
   const elL4 = document.getElementById('reg-4');
   const elIn = document.getElementById('input-buf');
   const elErr = document.getElementById('error-msg');
+  const elMode = document.getElementById('mode-ind');
+  const elModeBtn = document.getElementById('mode-btn');
+
+  // Convert input angle to radians based on mode
+  function toRad(a) { return angleMode === 'DEG' ? a * Math.PI / 180 : a; }
+  // Convert radians result back to mode
+  function fromRad(a) { return angleMode === 'DEG' ? a * 180 / Math.PI : a; }
 
   function fmt(n) {
     if (n === undefined) return '';
@@ -534,6 +586,63 @@
         render();
         break;
       case 'enter': doEnter(); break;
+
+      // ---- Scientific functions ----
+      case 'sin':  unaryOp(x => Math.sin(toRad(x))); break;
+      case 'cos':  unaryOp(x => Math.cos(toRad(x))); break;
+      case 'tan':  unaryOp(x => Math.tan(toRad(x))); break;
+      case 'asin': {
+        const operand = inputBuf !== '' ? parseFloat(inputBuf) : stack[stack.length - 1];
+        if (operand < -1 || operand > 1) { showError('asin out of range'); return; }
+        unaryOp(x => fromRad(Math.asin(x)));
+        break;
+      }
+      case 'acos': {
+        const operand = inputBuf !== '' ? parseFloat(inputBuf) : stack[stack.length - 1];
+        if (operand < -1 || operand > 1) { showError('acos out of range'); return; }
+        unaryOp(x => fromRad(Math.acos(x)));
+        break;
+      }
+      case 'atan': unaryOp(x => fromRad(Math.atan(x))); break;
+      case 'ln': {
+        const operand = inputBuf !== '' ? parseFloat(inputBuf) : stack[stack.length - 1];
+        if (operand <= 0) { showError('ln of non-positive'); return; }
+        unaryOp(x => Math.log(x));
+        break;
+      }
+      case 'log': {
+        const operand = inputBuf !== '' ? parseFloat(inputBuf) : stack[stack.length - 1];
+        if (operand <= 0) { showError('log of non-positive'); return; }
+        unaryOp(x => Math.log10(x));
+        break;
+      }
+      case 'exp':  unaryOp(x => Math.exp(x)); break;
+      case 'alog': unaryOp(x => Math.pow(10, x)); break;
+      case 'inv': {
+        const operand = inputBuf !== '' ? parseFloat(inputBuf) : stack[stack.length - 1];
+        if (operand === 0) { showError('1 ÷ 0'); return; }
+        unaryOp(x => 1 / x);
+        break;
+      }
+      case 'sqr': unaryOp(x => x * x); break;
+      case 'pi': {
+        // Commit any pending entry, then push π (HP-48 behavior)
+        if (!commitInput()) return;
+        stack.push(Math.PI);
+        render();
+        break;
+      }
+      case 'e': {
+        if (!commitInput()) return;
+        stack.push(Math.E);
+        render();
+        break;
+      }
+      case 'mode':
+        angleMode = (angleMode === 'DEG') ? 'RAD' : 'DEG';
+        elMode.textContent = angleMode;
+        elModeBtn.textContent = angleMode;
+        break;
     }
   }
 

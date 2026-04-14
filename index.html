@@ -241,7 +241,6 @@
 
   .btn-enter {
     background: var(--btn-enter);
-    grid-column: span 2;
     color: var(--display-glow);
     letter-spacing: 2px;
   }
@@ -257,6 +256,14 @@
     letter-spacing: 0.5px;
   }
   .btn-sci:hover { background: var(--btn-sci-hover); }
+
+  .num-pad {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .btn-enter-wide { grid-column: span 2; }
 
   .btn-clear { background: var(--btn-clear); }
   .btn-clear:hover { background: var(--btn-clear-hover); }
@@ -334,39 +341,39 @@
     <button class="btn btn-sci" data-action="sqr">x²</button>
     <button class="btn btn-sci" data-action="mode" id="mode-btn">DEG</button>
 
-    <!-- Row 4: stack ops -->
+    <!-- Row 4: stack ops (5-wide) -->
     <button class="btn btn-func" data-action="swap">SWAP<span class="key-hint">s</span></button>
     <button class="btn btn-func" data-action="roll">R↓<span class="key-hint">r</span></button>
     <button class="btn btn-func" data-action="sqrt">√x<span class="key-hint">q</span></button>
     <button class="btn btn-func" data-action="pow">yˣ<span class="key-hint">^</span></button>
-    <button class="btn btn-func" data-action="neg">±<span class="key-hint">n</span></button>
-
-    <!-- Row 5 -->
-    <button class="btn btn-num" data-digit="7">7</button>
-    <button class="btn btn-num" data-digit="8">8</button>
-    <button class="btn btn-num" data-digit="9">9</button>
-    <button class="btn btn-op" data-action="div">÷<span class="key-hint">/</span></button>
     <button class="btn btn-clear" data-action="clr">CLR<span class="key-hint">c</span></button>
 
-    <!-- Row 6 -->
-    <button class="btn btn-num" data-digit="4">4</button>
-    <button class="btn btn-num" data-digit="5">5</button>
-    <button class="btn btn-num" data-digit="6">6</button>
-    <button class="btn btn-op" data-action="mul">×<span class="key-hint">*</span></button>
-    <button class="btn btn-func" data-action="drop">DROP<span class="key-hint">d</span></button>
+    <!-- HP-48 style num pad: 4 columns -->
+    <div class="num-pad">
+      <button class="btn btn-enter btn-enter-wide" data-action="enter">ENTER ↵</button>
+      <button class="btn btn-func" data-action="neg">±<span class="key-hint">n</span></button>
+      <button class="btn btn-func" data-action="drop">DROP<span class="key-hint">d</span></button>
 
-    <!-- Row 7 -->
-    <button class="btn btn-num" data-digit="1">1</button>
-    <button class="btn btn-num" data-digit="2">2</button>
-    <button class="btn btn-num" data-digit="3">3</button>
-    <button class="btn btn-op" data-action="sub">−<span class="key-hint">-</span></button>
-    <button class="btn btn-func" data-action="dup">DUP</button>
+      <button class="btn btn-num" data-digit="7">7</button>
+      <button class="btn btn-num" data-digit="8">8</button>
+      <button class="btn btn-num" data-digit="9">9</button>
+      <button class="btn btn-op" data-action="div">÷<span class="key-hint">/</span></button>
 
-    <!-- Row 8 -->
-    <button class="btn btn-num" data-digit="0">0</button>
-    <button class="btn btn-num" data-digit=".">.</button>
-    <button class="btn btn-enter" data-action="enter">ENTER ↵</button>
-    <button class="btn btn-op" data-action="add">+</button>
+      <button class="btn btn-num" data-digit="4">4</button>
+      <button class="btn btn-num" data-digit="5">5</button>
+      <button class="btn btn-num" data-digit="6">6</button>
+      <button class="btn btn-op" data-action="mul">×<span class="key-hint">*</span></button>
+
+      <button class="btn btn-num" data-digit="1">1</button>
+      <button class="btn btn-num" data-digit="2">2</button>
+      <button class="btn btn-num" data-digit="3">3</button>
+      <button class="btn btn-op" data-action="sub">−<span class="key-hint">-</span></button>
+
+      <button class="btn btn-num" data-digit="0">0</button>
+      <button class="btn btn-num" data-digit=".">.</button>
+      <button class="btn btn-func" data-action="dup">DUP</button>
+      <button class="btn btn-op" data-action="add">+</button>
+    </div>
   </div>
 </div>
 
